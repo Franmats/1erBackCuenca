@@ -1,6 +1,6 @@
-import { readFile, writeFile, access, constants} from 'fs/promises';
+import { readFile, writeFile, access, constants } from 'fs/promises';
 
-class ProductManager {
+export class ProductManager {
 
     #path
     constructor(path) {
@@ -9,11 +9,26 @@ class ProductManager {
     }
 
     getProducts = async() => {
-        const productoString = JSON.stringify(this.products)
-        await writeFile("BD.json", productoString)
-        let read = await readFile("./BD.json","utf-8").then(e => JSON.parse(e)).catch(e=> console.log("errror", e))// con jsonparse lo convertimos a objeto para mostralo en consola si existen o actualizan los datos 
-        console.log("Productos",read)
-        return read
+/*         access("./BD.json", constants.F_OK | constants.R_OK, async (error) => {
+            if (error) {
+              console.error(`No se puede acceder al archivo ${nombreArchivo}:`, error);
+            } else {
+                const productoString = JSON.stringify(this.products)
+                writeFile("BD.json", productoString)
+                let read = await readFile("./BD.json","utf-8").then(e => JSON.parse(e)).catch(e=> console.log("errror", e))// con jsonparse lo convertimos a objeto para mostralo en consola si existen o actualizan los datos 
+                console.log("Productos",read)
+                return read
+            }
+          }); */
+
+        if (access("BD.json", constants.F_OK | constants.R_OK)) {
+
+            let read = await readFile("./BD.json","utf-8").then(e => JSON.parse(e)).catch(e=> console.log("errror", e))// con jsonparse lo convertimos a objeto para mostralo en consola si existen o actualizan los datos 
+            console.log("Productos",read)
+            return read
+        }
+
+        
     }
 
     getNextId = () => {
@@ -54,7 +69,8 @@ class ProductManager {
         if (espaciosVacios() === false && codigoRepe() === false) {
 
             this.products.push(producto)
-
+            const productoString = JSON.stringify(this.products)
+            writeFile("BD.json", productoString) //await para que se escriba antes que se lea
 
         }
 
@@ -64,10 +80,11 @@ class ProductManager {
     getProductById = async (id) => {
         this.products = await this.getProducts()
 
-        const productoFiltrado = this.products.filter(e => e.id == id)
+        const productoFiltrado = this.products.filter(e => e.id === id)
+        console.log(productoFiltrado)
             
         if (productoFiltrado.length > 0 && typeof id == "number") { //VALIDO CON EL TYPE OF QUE LA ENTRADA DEL PARAMETRO SE SOLO UN NUMERO
-            return console.log ("El producto buscado",productoFiltrado)
+            return productoFiltrado
         } else {
             return console.log("Not Found") }
     }
@@ -77,6 +94,8 @@ class ProductManager {
         this.products = await this.getProducts()
         let a = this.products.filter(prod => prod.id !== id)
         this.products = a
+        const productoString = JSON.stringify(this.products)
+        writeFile("BD.json", productoString) //await para que se escriba antes que se lea
         console.log("Producto Eliminado")
     }
 
@@ -105,10 +124,11 @@ class ProductManager {
             }
         let a = this.products.filter(prod => prod.id !== id)
         this.products = a
-        this.products.push(n)
+        const productoString = JSON.stringify(this.products)
+        writeFile("BD.json", productoString) //await para que se escriba antes que se lea
         console.log("Producto Modificado", n )
     }  
 }
 
-export default ProductManager
+
 
