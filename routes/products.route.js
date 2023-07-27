@@ -49,12 +49,13 @@ router.post("/", async (req,res) => {
   } */
 })
 //ACTUALIZAR UN PRODUCTO CON PUT SI FUNCIONA!!!
-router.put("/", (request, response) => {
+router.put("/", async (request, response) => {
   let id = request.query.id //escribir en el navegador ?id=2&parametro=title&update=CambioTitulo
   let parametro = request.query.parametro
   let update = request.query.update
-
-  manager.updateProduct(id,parametro,update)
+  
+ 
+  await manager.updateProduct(id,parametro,update)
   response.send({status:"success"})
 })
 // ELIMINAR UN PRODUCTO CON DELETE SI FUNCIONA

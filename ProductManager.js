@@ -11,16 +11,16 @@ export class ProductManager {
         try {
             const fileExists = await access("BD.json", constants.F_OK | constants.R_OK)
             if (fileExists == undefined ) {
-                const data = await readFile("./BD.json", "utf-8");
+                const data = await readFile("./BD.json", "utf-8")
                 const read = JSON.parse(data)
-                return read;
+                return read
             } else {
                 await writeFile("BD.json", "[]", "utf-8");
-                console.log("El archivo BD.json fue creado.");
-                return [];
+                console.log("El archivo BD.json fue creado.")
+                return []
             }
         } catch (error) {
-            console.error("Error al leer o crear el archivo:", error);
+            console.error("Error al leer o crear el archivo:", error)
             return []; 
         }  
     }
@@ -106,34 +106,33 @@ export class ProductManager {
         await writeFile("BD.json", productoString) 
     }
 
-    updateProduct = async (id, parametro, actualizacion)=> {
-        let m = await this.getProducts() 
-        let n = m.find(e => e.id == id)
-            
-        switch (parametro) {
-            case "title":
-                n.title = actualizacion
-                    
-                break;
-            case "description":
-                n.description = actualizacion
-                break;
-            case "price":
-                n.price = actualizacion
-                break;
-            case "stock":
-                n.stock = actualizacion
-                break;
-            
-            default:
-                console.log("Parametro Incorrecto")
-                break;
+    updateProduct = async (id,parametro, update)=> {
+        try {
+            let n = await this.getProducts();
+            console.log(n);
+    
+            const ObjAct = {
+                [parametro]: update
+            };
+    
+            let productoActualizar = n.find(e => e.id == id)
+            console.log(productoActualizar);
+            if (productoActualizar) {
+                Object.assign(productoActualizar, ObjAct)
+    
+                const productosActualizados = n.map((e) => (e.id === id ? productoActualizar : e));
+                const productoString = JSON.stringify(productosActualizados)
+                await writeFile("BD.json", productoString)
+    
+                console.log("Producto Modificado")
+            } else {
+                console.log("No se encontró un producto con el ID proporcionado.")
             }
-        const a = await m.filter(prod => prod.id !== id)
-        const productoString = JSON.stringify(a)
-        await writeFile("BD.json", productoString) 
-        console.log("Producto Modificado", n )
-    }  
+        } catch (error) {
+            console.error("Error al actualizar el producto:", error)
+        } 
+
+    }
 }
 
 
