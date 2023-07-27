@@ -4,10 +4,11 @@ const router = Router()
 
 const manager = new CartManager("carrito.json");
 
-manager.createCart(1)
-manager.createCart(2)
 
-
+router.post("/", async (req, res)=> {
+  await manager.createCart()
+  res.send({exito:"Carrito creado"})
+})
 
 
 //BUSCAR POR CARRITO FUNCIONA
@@ -17,17 +18,16 @@ router.get("/:cid", async (req, res)=> {
     if (!prod) res.send({error:"Carrito no existente"})
     else res.send(prod)
 })
+
 // INTRODUCIR UN PRODUCTO EN UN DETERMINADO CARRITO CON ERRORES 
 router.post("/:cid/product/:pid", async (req,res) => {
     const cid = parseInt(req.params.cid)
-    const pid = parseInt(req.params.id)
-    const newProdInCart =  req.body
-    manager.createProductCart(cid, newProdInCart.product, newProdInCart.quantity)
+    const pid = parseInt(req.params.pid)
+    const newProduct = req.body
+    const resultado = await manager.createProductCart(cid, pid, newProduct)
     
+    res.send(resultado)
     
-
-
-    res.send({status:"success"})
     /*     {
       "product":"1",
       "quantity": "1",
@@ -36,3 +36,4 @@ router.post("/:cid/product/:pid", async (req,res) => {
 })
 
 export default router
+

@@ -5,35 +5,42 @@ export class CartManager {
     #path
     constructor(path) {
         this.#path = path
-        this.carts = []
-        this.product = []
     }
 
     getProductsCart = async() => {
-        if (access("carrito.json", constants.F_OK | constants.R_OK)) {
-
-            let read = await readFile("./carrito.json","utf-8").then(e => JSON.parse(e)).catch(e=> console.log("errror", e))// con jsonparse lo convertimos a objeto para mostralo en consola si existen o actualizan los datos 
-            console.log("Productos en el carrito",read)
-            return read
-        }        
+        try {
+            const fileExists = await access("carrito.json", constants.F_OK | constants.R_OK)
+            if (fileExists == undefined ) {
+                const data = await readFile("./carrito.json", "utf-8");
+                const read = JSON.parse(data)
+                return read;
+            } else {
+                await writeFile("carrito.json", "[]", "utf-8");
+                console.log("El archivo carrito.json fue creado.");
+                return [];
+            }
+        } catch (error) {
+            console.error("Error al leer o crear el archivo:", error);
+            return []; 
+        }       
     }
 
-    getNextId = (array) => {
-        const count = array.length
-        //[0,1,2,3,4,5] count = 6, count -1 = 5 obtengo el ultimo objeto y obtengo su id
-        const nextID = (count > 0 ) ? array[count - 1].id + 1 : 1 
-        return nextID
+    getNextId = async () => {
+        let p = await this.getProductsCart()
+        let count =  p.length
+        const lastCartId = count > 0 ? p[count - 1].id : 0; 
+        const nextID = lastCartId + 1;
+        return nextID;  
     }
-    createCart = (num) => {
-
+    createCart = async () => {
+        let p = await this.getProductsCart()
         const cart = {
-            carrito: num,
-            id: this.getNextId(this.carts),
-            products: this.product
+            id: await this.getNextId(),
+            products:[]
         }
-        this.carts.push(cart)
-        const carritoString = JSON.stringify(this.carts)
-        writeFile("carrito.json", carritoString)
+        p.push(cart)
+        const carritoString = JSON.stringify(p)
+        await writeFile("carrito.json", carritoString)
 
         }
 
@@ -41,42 +48,46 @@ export class CartManager {
 
     //METODO PARA BUSCAR UN PRODUCTO SEGUN ID
     getCartById = async (id) => {
-        this.carts = await this.getProductsCart()
+        let o = await this.getProductsCart()
 
-        const carritoFiltrado = this.carts.filter(e => e.id === id)
+        const carritoFiltrado = o.find(e => e.id === id)
             
-        if (carritoFiltrado.length > 0 && typeof id == "number") { //VALIDO CON EL TYPE OF QUE LA ENTRADA DEL PARAMETRO SE SOLO UN NUMERO
+        if ((carritoFiltrado.id >= 1) && (typeof id == "number")) { //VALIDO CON EL TYPE OF QUE LA ENTRADA DEL PARAMETRO SE SOLO UN NUMERO
             return carritoFiltrado
         } else {
             return console.log("Not Found") }
     }
 
-    createProductCart = async (cid,productId, cantidad)=> {
+    createProductCart = async (cid, pid, newProduct)=> {
 
-        const isRepeated = this.product.some(e => e.productoId == productId) //buscamos con el metodo some algún producto q este repetido y nos devuelva un valor boleano
-        if (isRepeated) { // si el producto esta repetido
-            const product = this.product.find(e => e.productoId  == productId) // el metodo find busca el producto repetido segun el id
-            product.cantidad++ // modifica el valor de la cantidad y no pushea otro producto igual al carrito
+        let carrito = await this.getCartById(cid)
+        let productoEnCarrito = carrito.products
+
+        console.log(productoEnCarrito);
+        console.log(carrito);
+        //esta instacia pushea el producto dentro de la array products del carrito selecionado
+        const estaRepetido = productoEnCarrito.some(e => e.product == pid) //buscamos con el metodo some algún producto q este repetido y nos devuelva un valor boleano
+        if (estaRepetido) { // si el producto esta repetido
+            const product1 = productoEnCarrito.find(e => e.product  == pid) // el metodo find busca el producto repetido segun el id
+            const as = productoEnCarrito.filter(e=> e.id != pid)
+            product1.quantity++ // modifica el valor de la cantidad y no pushea otro producto igual al carrito
+            return this.updateCart(carrito)
+        }else {
+            carrito.products.push(newProduct)
+            return this.updateCart(carrito)
         }
-        let buscar = await this.getProductsCart()
-        let a = buscar.find(e => e.id === cid)
-        if(cid == 1 && !isRepeated) {
-            const producto = {
-                productoId :productId,
-                cantidad
-            }
-            let b = a.products.push(producto)
-            console.log(b)
-            this.product.push(b)
-            const carritoString = JSON.stringify(this.carts)
-            writeFile("carrito.json", carritoString)
-          } else if(cid == 2 && !isRepeated ) {
-            let b = a.products.push(producto)
-            console.log(b)
-            this.product.push(b)
-            const carritoString = JSON.stringify(this.carts)
-            writeFile("carrito.json", carritoString)
-          } else return console.log("error")
+
+    
+
+    }
+
+    updateCart = async (data)=>{
+        let n = await this.getProductsCart()
+        const idx = n.findIndex(e => e.id == data.id)
+        n[idx] = data
+
+        const carritoString = JSON.stringify(n)
+        return await writeFile("carrito.json", carritoString)
 
     }
 
