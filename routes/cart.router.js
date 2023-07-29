@@ -1,37 +1,42 @@
-import {CartManager} from "../CartManager.js"
 import { Router } from "express";
+import {CartManager} from "../DAO/fileManager/CartManager.js"
+import CartModel from "../DAO/mongoManager/models/cart.model.js";
+
 const router = Router()
 
-const manager = new CartManager("carrito.json");
+router.get("/", async (req, res)=> {
+  const result = await CartModel.find()
+  res.send(result)
+})
 
 
 router.post("/", async (req, res)=> {
-  await manager.createCart()
-  res.send({exito:"Carrito creado"})
+  const result = await CartModel.create({products:[]})
+  res.send(result)
 })
 
 
 //BUSCAR POR CARRITO FUNCIONA
 router.get("/:cid", async (req, res)=> {
-    const cid = parseInt(req.params.cid)
-    const prod = await manager.getCartById(cid)
+    const cid = req.params.cid
+    console.log(cid);
+    const prod = await CartModel.findOne({ _id: cid })
     if (!prod) res.send({error:"Carrito no existente"})
     else res.send(prod)
 })
 
 // INTRODUCIR UN PRODUCTO EN UN DETERMINADO CARRITO CON ERRORES 
 router.post("/:cid/product/:pid", async (req,res) => {
-    const cid = parseInt(req.params.cid)
-    const pid = parseInt(req.params.pid)
+    const cid = req.params.cid
+    const pid = req.params.pid
     const newProduct = req.body
-    const resultado = await manager.createProductCart(cid, pid, newProduct)
-    
-    res.send(resultado)
-    
+    const carrito =  await CartModel.findById(cid)
+    carrito.products.push({id:pid,quantity:2})
+    const result = carrito.save()
+    res.send(result) 
     /*     {
       "product":"1",
       "quantity": "1",
-
   } */
 })
 
